@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -161,7 +162,7 @@ namespace BatRunner
                 return;
 
             var batFiles = Directory.GetFiles(batFilesDir, "*.bat")
-                                   .OrderByDescending(f => File.GetLastWriteTime(f))
+                                   .OrderBy(f => GetNumericValue(Path.GetFileNameWithoutExtension(f)))
                                    .ToList();
 
             foreach (var filePath in batFiles)
@@ -170,6 +171,18 @@ namespace BatRunner
                 var fileButton = CreateFileButton(fileName, filePath);
                 SavedFilesPanel.Children.Add(fileButton);
             }
+        }
+
+        private int GetNumericValue(string fileName)
+        {
+            // Extract number from filename (e.g., "C1" -> 1, "C10" -> 10, "test123" -> 123)
+            var match = Regex.Match(fileName, @"\d+");
+            if (match.Success && int.TryParse(match.Value, out int number))
+            {
+                return number;
+            }
+            // If no number found, return max value to put at end
+            return int.MaxValue;
         }
 
         private Button CreateFileButton(string fileName, string filePath)
