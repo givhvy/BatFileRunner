@@ -20,140 +20,12 @@ namespace BatRunner
         public MainWindow()
         {
             InitializeComponent();
-            CodeEditor.Text = "";
 
             batFilesDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BatFiles");
             Directory.CreateDirectory(batFilesDir);
 
             // Load saved files after window is fully loaded
             this.Loaded += (s, e) => LoadSavedFiles();
-        }
-
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                string fileName = FileNameBox.Text.Trim();
-
-                // Validate file name
-                if (string.IsNullOrWhiteSpace(fileName))
-                {
-                    AppendOutput("❌ Lỗi: Vui lòng nhập tên file!", true);
-                    return;
-                }
-
-                // Add .bat extension if not present
-                if (!fileName.EndsWith(".bat", StringComparison.OrdinalIgnoreCase))
-                {
-                    fileName += ".bat";
-                    FileNameBox.Text = fileName;
-                }
-
-                // Full path to the bat file
-                currentBatFilePath = Path.Combine(batFilesDir, fileName);
-
-                // Write the content to the file
-                File.WriteAllText(currentBatFilePath, CodeEditor.Text);
-
-                // Show success message
-                AppendOutput($"✅ Đã lưu: {fileName}", false);
-
-                // Reload saved files to show the new file
-                LoadSavedFiles();
-            }
-            catch (Exception ex)
-            {
-                AppendOutput($"❌ Lỗi khi lưu file: {ex.Message}", true);
-            }
-        }
-
-        private async void RunButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                // First save the file
-                SaveButton_Click(sender, e);
-
-                if (string.IsNullOrWhiteSpace(currentBatFilePath) || !File.Exists(currentBatFilePath))
-                {
-                    AppendOutput("❌ Không tìm thấy file để chạy. Vui lòng lưu file trước!", true);
-                    return;
-                }
-
-                AppendOutput($"\n▶️ Đang chạy file: {Path.GetFileName(currentBatFilePath)}", false);
-                AppendOutput("─────────────────────────────────────────────", false);
-
-                await Task.Run(() =>
-                {
-                    // Create process to run the bat file
-                    ProcessStartInfo processInfo = new ProcessStartInfo
-                    {
-                        FileName = "cmd.exe",
-                        Arguments = $"/c \"{currentBatFilePath}\"",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        CreateNoWindow = true,
-                        WorkingDirectory = Path.GetDirectoryName(currentBatFilePath)
-                    };
-
-                    using (Process process = new Process())
-                    {
-                        process.StartInfo = processInfo;
-
-                        // Capture output
-                        process.OutputDataReceived += (s, args) =>
-                        {
-                            if (!string.IsNullOrEmpty(args.Data))
-                            {
-                                Dispatcher.Invoke(() => AppendOutput(args.Data, false));
-                            }
-                        };
-
-                        process.ErrorDataReceived += (s, args) =>
-                        {
-                            if (!string.IsNullOrEmpty(args.Data))
-                            {
-                                Dispatcher.Invoke(() => AppendOutput($"⚠️ {args.Data}", true));
-                            }
-                        };
-
-                        process.Start();
-                        process.BeginOutputReadLine();
-                        process.BeginErrorReadLine();
-                        process.WaitForExit();
-
-                        int exitCode = process.ExitCode;
-                        Dispatcher.Invoke(() =>
-                        {
-                            AppendOutput("─────────────────────────────────────────────", false);
-                            if (exitCode == 0)
-                            {
-                                AppendOutput($"✅ Hoàn thành với mã thoát: {exitCode}", false);
-                            }
-                            else
-                            {
-                                AppendOutput($"⚠️ Hoàn thành với mã thoát: {exitCode}", true);
-                            }
-                        });
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                AppendOutput($"❌ Lỗi khi chạy file: {ex.Message}", true);
-            }
-        }
-
-        private void ClearButton_Click(object sender, RoutedEventArgs e)
-        {
-            OutputConsole.Clear();
-        }
-
-        private void AppendOutput(string message, bool isError = false)
-        {
-            OutputConsole.AppendText($"{message}\n");
-            OutputScrollViewer.ScrollToEnd();
         }
 
         private void LoadSavedFiles()
@@ -263,77 +135,27 @@ namespace BatRunner
             return fileName.Substring(0, 2).ToUpper();
         }
 
-        private async void RunBatFile(string filePath)
+        private void RunBatFile(string filePath)
         {
             try
             {
                 if (!File.Exists(filePath))
                 {
-                    AppendOutput("❌ File không tồn tại!", true);
+                    MessageBox.Show("File không tồn tại!", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                     LoadSavedFiles();
                     return;
                 }
 
-                AppendOutput($"\n▶️ Đang chạy file: {Path.GetFileName(filePath)}", false);
-                AppendOutput("─────────────────────────────────────────────", false);
-
-                await Task.Run(() =>
+                // Simply run the bat file
+                Process.Start(new ProcessStartInfo
                 {
-                    ProcessStartInfo processInfo = new ProcessStartInfo
-                    {
-                        FileName = "cmd.exe",
-                        Arguments = $"/c \"{filePath}\"",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        CreateNoWindow = true,
-                        WorkingDirectory = Path.GetDirectoryName(filePath)
-                    };
-
-                    using (Process process = new Process())
-                    {
-                        process.StartInfo = processInfo;
-
-                        process.OutputDataReceived += (s, args) =>
-                        {
-                            if (!string.IsNullOrEmpty(args.Data))
-                            {
-                                Dispatcher.Invoke(() => AppendOutput(args.Data, false));
-                            }
-                        };
-
-                        process.ErrorDataReceived += (s, args) =>
-                        {
-                            if (!string.IsNullOrEmpty(args.Data))
-                            {
-                                Dispatcher.Invoke(() => AppendOutput($"⚠️ {args.Data}", true));
-                            }
-                        };
-
-                        process.Start();
-                        process.BeginOutputReadLine();
-                        process.BeginErrorReadLine();
-                        process.WaitForExit();
-
-                        int exitCode = process.ExitCode;
-                        Dispatcher.Invoke(() =>
-                        {
-                            AppendOutput("─────────────────────────────────────────────", false);
-                            if (exitCode == 0)
-                            {
-                                AppendOutput($"✅ Hoàn thành với mã thoát: {exitCode}", false);
-                            }
-                            else
-                            {
-                                AppendOutput($"⚠️ Hoàn thành với mã thoát: {exitCode}", true);
-                            }
-                        });
-                    }
+                    FileName = filePath,
+                    UseShellExecute = true
                 });
             }
             catch (Exception ex)
             {
-                AppendOutput($"❌ Lỗi khi chạy file: {ex.Message}", true);
+                MessageBox.Show($"Lỗi khi chạy file: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -443,7 +265,7 @@ namespace BatRunner
             }
             catch (Exception ex)
             {
-                AppendOutput($"❌ Lỗi: {ex.Message}", true);
+                MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -459,7 +281,7 @@ namespace BatRunner
 
                 if (!File.Exists(localStatePath))
                 {
-                    AppendOutput("❌ Không tìm thấy file Local State của Chrome", true);
+                    MessageBox.Show("Không tìm thấy file Local State của Chrome", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
 
@@ -471,13 +293,13 @@ namespace BatRunner
 
                     if (!root.TryGetProperty("profile", out JsonElement profileElement))
                     {
-                        AppendOutput("❌ Không tìm thấy thông tin profile trong Local State", true);
+                        MessageBox.Show("Không tìm thấy thông tin profile trong Local State", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                         return;
                     }
 
                     if (!profileElement.TryGetProperty("info_cache", out JsonElement infoCache))
                     {
-                        AppendOutput("❌ Không tìm thấy info_cache trong Local State", true);
+                        MessageBox.Show("Không tìm thấy info_cache trong Local State", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                         return;
                     }
 
@@ -498,15 +320,15 @@ namespace BatRunner
 
                     if (foundProfileDir == null)
                     {
-                        AppendOutput($"❌ Không tìm thấy profile có tên '{profileName}'", true);
-                        AppendOutput("Các profile có sẵn:", false);
+                        string availableProfiles = "Các profile có sẵn:\n";
                         foreach (JsonProperty prop in infoCache.EnumerateObject())
                         {
                             if (prop.Value.TryGetProperty("name", out JsonElement nameElement))
                             {
-                                AppendOutput($"  • {nameElement.GetString()} -> {prop.Name}", false);
+                                availableProfiles += $"  • {nameElement.GetString()} → {prop.Name}\n";
                             }
                         }
+                        MessageBox.Show($"Không tìm thấy profile có tên '{profileName}'\n\n{availableProfiles}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
 
@@ -514,7 +336,7 @@ namespace BatRunner
                     string chromePath = FindChromePath();
                     if (chromePath == null)
                     {
-                        AppendOutput("❌ Không tìm thấy Chrome.exe", true);
+                        MessageBox.Show("Không tìm thấy Chrome.exe", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                         return;
                     }
 
@@ -526,8 +348,7 @@ namespace BatRunner
                     string filePath = Path.Combine(batFilesDir, fileName);
                     File.WriteAllText(filePath, batContent);
 
-                    AppendOutput($"✅ Đã tạo file: {fileName}", false);
-                    AppendOutput($"   Profile: {profileName} → {foundProfileDir}", false);
+                    MessageBox.Show($"Đã tạo file: {fileName}\nProfile: {profileName} → {foundProfileDir}", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
 
                     // Reload danh sách files
                     LoadSavedFiles();
@@ -535,7 +356,7 @@ namespace BatRunner
             }
             catch (Exception ex)
             {
-                AppendOutput($"❌ Lỗi khi tìm profile: {ex.Message}", true);
+                MessageBox.Show($"Lỗi khi tìm profile: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

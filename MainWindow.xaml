@@ -52,10 +52,8 @@
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="200"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="180"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
@@ -70,163 +68,20 @@
                        Foreground="#AAAAAA"/>
         </StackPanel>
 
-        <!-- Code Editor Area -->
-        <Border Grid.Row="1"
-                Background="#2D2D30"
-                BorderBrush="#3F3F46"
-                BorderThickness="1"
-                CornerRadius="5"
-                Margin="0,0,0,15">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <!-- Code Editor Header -->
-                <Border Grid.Row="0"
-                        Background="#252526"
-                        BorderBrush="#3F3F46"
-                        BorderThickness="0,0,0,1"
-                        Padding="10">
-                    <TextBlock Text="📝 Nhập mã lệnh BAT"
-                               Foreground="#CCCCCC"
-                               FontWeight="SemiBold"
-                               FontSize="13"/>
-                </Border>
-
-                <!-- Code Editor -->
-                <ScrollViewer Grid.Row="1"
-                             VerticalScrollBarVisibility="Auto"
-                             HorizontalScrollBarVisibility="Auto">
-                    <TextBox x:Name="CodeEditor"
-                             Style="{StaticResource ModernTextBox}"
-                             AcceptsReturn="True"
-                             TextWrapping="NoWrap"
-                             VerticalScrollBarVisibility="Auto"
-                             HorizontalScrollBarVisibility="Auto"
-                             BorderThickness="0"
-                             Margin="5"/>
-                </ScrollViewer>
-            </Grid>
-        </Border>
-
-        <!-- Saved Files Grid -->
-        <Border Grid.Row="3"
-                Background="#2D2D30"
-                BorderBrush="#3F3F46"
-                BorderThickness="1"
-                CornerRadius="5"
-                Margin="0,0,0,15">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <!-- Saved Files Header -->
-                <Border Grid.Row="0"
-                        Background="#252526"
-                        BorderBrush="#3F3F46"
-                        BorderThickness="0,0,0,1"
-                        Padding="10">
-                    <TextBlock Text="📁 File đã lưu"
-                               Foreground="#CCCCCC"
-                               FontWeight="SemiBold"
-                               FontSize="13"/>
-                </Border>
-
-                <!-- Files List -->
-                <ScrollViewer Grid.Row="1"
-                             VerticalScrollBarVisibility="Auto"
-                             HorizontalScrollBarVisibility="Disabled">
-                    <WrapPanel x:Name="SavedFilesPanel"
-                              Margin="10"
-                              Orientation="Horizontal"/>
-                </ScrollViewer>
-            </Grid>
-        </Border>
-
         <!-- Control Panel -->
-        <Grid Grid.Row="2" Margin="0,0,0,15">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <StackPanel Grid.Column="0" Orientation="Horizontal">
-                <TextBlock Text="📄 Tên file:"
-                           Foreground="#CCCCCC"
-                           VerticalAlignment="Center"
-                           FontSize="13"
-                           Margin="0,0,10,0"/>
-                <TextBox x:Name="FileNameBox"
-                         Style="{StaticResource ModernTextBox}"
-                         Width="250"
-                         Text="myScript.bat"
-                         VerticalAlignment="Center"
-                         Height="35"/>
-            </StackPanel>
-
-            <Button Grid.Column="1"
-                    x:Name="SaveButton"
-                    Content="💾 Lưu File"
-                    Style="{StaticResource ModernButton}"
-                    Click="SaveButton_Click"
-                    Margin="10,0"
-                    Width="120"/>
-
-            <Button Grid.Column="2"
-                    x:Name="RunButton"
-                    Content="▶️ Chạy"
-                    Click="RunButton_Click"
-                    Width="120"
-                    Background="#16C60C"
-                    Foreground="White"
-                    BorderThickness="0"
-                    Padding="20,10"
-                    FontSize="14"
-                    FontWeight="SemiBold"
-                    Cursor="Hand">
-                <Button.Template>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="5"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Button.Template>
-                <Button.Style>
-                    <Style TargetType="Button">
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#13A10E"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#107C10"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-
-            <Button Grid.Column="3"
-                    x:Name="FindChromeButton"
-                    Content="🔍 Tìm Chrome"
+        <Grid Grid.Row="1" Margin="0,0,0,15">
+            <Button x:Name="FindChromeButton"
+                    Content="🔍 Tìm và Thêm Chrome Profile"
                     Click="FindChromeButton_Click"
-                    Width="130"
+                    HorizontalAlignment="Center"
+                    Width="300"
                     Background="#FF8C00"
                     Foreground="White"
                     BorderThickness="0"
-                    Padding="20,10"
-                    FontSize="14"
+                    Padding="20,12"
+                    FontSize="16"
                     FontWeight="SemiBold"
-                    Cursor="Hand"
-                    Margin="10,0,0,0">
+                    Cursor="Hand">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}"
@@ -252,9 +107,9 @@
             </Button>
         </Grid>
 
-        <!-- Output Console -->
-        <Border Grid.Row="4"
-                Background="#0C0C0C"
+        <!-- Saved Files Grid -->
+        <Border Grid.Row="2"
+                Background="#2D2D30"
                 BorderBrush="#3F3F46"
                 BorderThickness="1"
                 CornerRadius="5">
@@ -264,44 +119,25 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Console Header -->
+                <!-- Saved Files Header -->
                 <Border Grid.Row="0"
-                        Background="#1A1A1A"
+                        Background="#252526"
                         BorderBrush="#3F3F46"
                         BorderThickness="0,0,0,1"
                         Padding="10">
-                    <Grid>
-                        <TextBlock Text="💻 Kết quả thực thi"
-                                   Foreground="#00FF00"
-                                   FontWeight="SemiBold"
-                                   FontSize="13"/>
-                        <Button x:Name="ClearButton"
-                                Content="🗑️ Xóa"
-                                HorizontalAlignment="Right"
-                                Click="ClearButton_Click"
-                                Background="#333333"
-                                Foreground="White"
-                                BorderThickness="0"
-                                Padding="10,3"
-                                Cursor="Hand"
-                                FontSize="11"/>
-                    </Grid>
+                    <TextBlock Text="📁 File đã lưu"
+                               Foreground="#CCCCCC"
+                               FontWeight="SemiBold"
+                               FontSize="13"/>
                 </Border>
 
-                <!-- Console Output -->
+                <!-- Files List -->
                 <ScrollViewer Grid.Row="1"
                              VerticalScrollBarVisibility="Auto"
-                             x:Name="OutputScrollViewer">
-                    <TextBox x:Name="OutputConsole"
-                             Background="Transparent"
-                             Foreground="#00FF00"
-                             BorderThickness="0"
-                             IsReadOnly="True"
-                             FontFamily="Consolas"
-                             FontSize="12"
-                             Padding="10"
-                             TextWrapping="Wrap"
-                             VerticalScrollBarVisibility="Auto"/>
+                             HorizontalScrollBarVisibility="Disabled">
+                    <WrapPanel x:Name="SavedFilesPanel"
+                              Margin="10"
+                              Orientation="Horizontal"/>
                 </ScrollViewer>
             </Grid>
         </Border>
