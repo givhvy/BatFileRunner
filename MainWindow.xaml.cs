@@ -2,11 +2,13 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Microsoft.Win32;
 
 namespace BatRunner
 {
@@ -333,6 +335,226 @@ namespace BatRunner
             {
                 AppendOutput($"❌ Lỗi khi chạy file: {ex.Message}", true);
             }
+        }
+
+        private void FindChromeButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Tạo dialog để nhập tên profile
+                var inputDialog = new Window
+                {
+                    Title = "Tìm Chrome Profile",
+                    Width = 400,
+                    Height = 200,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = this,
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1E1E1E")),
+                    ResizeMode = ResizeMode.NoResize
+                };
+
+                var grid = new Grid { Margin = new Thickness(20) };
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
+
+                var label = new TextBlock
+                {
+                    Text = "Nhập tên Chrome Profile:",
+                    Foreground = Brushes.White,
+                    FontSize = 14,
+                    Margin = new Thickness(0, 0, 0, 10)
+                };
+                Grid.SetRow(label, 0);
+
+                var textBox = new TextBox
+                {
+                    FontSize = 14,
+                    Padding = new Thickness(8),
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2D2D30")),
+                    Foreground = Brushes.White,
+                    BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3F3F46")),
+                    Margin = new Thickness(0, 0, 0, 15)
+                };
+                Grid.SetRow(textBox, 1);
+
+                var buttonPanel = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    HorizontalAlignment = HorizontalAlignment.Right
+                };
+                Grid.SetRow(buttonPanel, 3);
+
+                var okButton = new Button
+                {
+                    Content = "Tìm kiếm",
+                    Width = 100,
+                    Height = 35,
+                    Margin = new Thickness(0, 0, 10, 0),
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#007ACC")),
+                    Foreground = Brushes.White,
+                    BorderThickness = new Thickness(0),
+                    Cursor = System.Windows.Input.Cursors.Hand
+                };
+
+                var cancelButton = new Button
+                {
+                    Content = "Hủy",
+                    Width = 100,
+                    Height = 35,
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3F3F46")),
+                    Foreground = Brushes.White,
+                    BorderThickness = new Thickness(0),
+                    Cursor = System.Windows.Input.Cursors.Hand
+                };
+
+                okButton.Click += (s, args) =>
+                {
+                    string profileName = textBox.Text.Trim();
+                    if (!string.IsNullOrWhiteSpace(profileName))
+                    {
+                        inputDialog.DialogResult = true;
+                        inputDialog.Tag = profileName;
+                        inputDialog.Close();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Vui lòng nhập tên profile!", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                };
+
+                cancelButton.Click += (s, args) => inputDialog.Close();
+
+                buttonPanel.Children.Add(okButton);
+                buttonPanel.Children.Add(cancelButton);
+
+                grid.Children.Add(label);
+                grid.Children.Add(textBox);
+                grid.Children.Add(buttonPanel);
+
+                inputDialog.Content = grid;
+
+                if (inputDialog.ShowDialog() == true)
+                {
+                    string profileName = inputDialog.Tag as string;
+                    FindAndCreateChromeProfile(profileName);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendOutput($"❌ Lỗi: {ex.Message}", true);
+            }
+        }
+
+        private void FindAndCreateChromeProfile(string profileName)
+        {
+            try
+            {
+                // Đường dẫn tới Local State
+                string localStatePath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Google", "Chrome", "User Data", "Local State"
+                );
+
+                if (!File.Exists(localStatePath))
+                {
+                    AppendOutput("❌ Không tìm thấy file Local State của Chrome", true);
+                    return;
+                }
+
+                // Đọc và parse JSON
+                string jsonContent = File.ReadAllText(localStatePath);
+                using (JsonDocument doc = JsonDocument.Parse(jsonContent))
+                {
+                    JsonElement root = doc.RootElement;
+
+                    if (!root.TryGetProperty("profile", out JsonElement profileElement))
+                    {
+                        AppendOutput("❌ Không tìm thấy thông tin profile trong Local State", true);
+                        return;
+                    }
+
+                    if (!profileElement.TryGetProperty("info_cache", out JsonElement infoCache))
+                    {
+                        AppendOutput("❌ Không tìm thấy info_cache trong Local State", true);
+                        return;
+                    }
+
+                    // Tìm profile
+                    string foundProfileDir = null;
+                    foreach (JsonProperty prop in infoCache.EnumerateObject())
+                    {
+                        if (prop.Value.TryGetProperty("name", out JsonElement nameElement))
+                        {
+                            string name = nameElement.GetString();
+                            if (name != null && name.Equals(profileName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                foundProfileDir = prop.Name;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (foundProfileDir == null)
+                    {
+                        AppendOutput($"❌ Không tìm thấy profile có tên '{profileName}'", true);
+                        AppendOutput("Các profile có sẵn:", false);
+                        foreach (JsonProperty prop in infoCache.EnumerateObject())
+                        {
+                            if (prop.Value.TryGetProperty("name", out JsonElement nameElement))
+                            {
+                                AppendOutput($"  • {nameElement.GetString()} -> {prop.Name}", false);
+                            }
+                        }
+                        return;
+                    }
+
+                    // Tìm Chrome path
+                    string chromePath = FindChromePath();
+                    if (chromePath == null)
+                    {
+                        AppendOutput("❌ Không tìm thấy Chrome.exe", true);
+                        return;
+                    }
+
+                    // Tạo nội dung file .bat
+                    string batContent = $"@echo off\nstart \"\" \"{chromePath}\" --profile-directory=\"{foundProfileDir}\"\nexit /b 0";
+
+                    // Lưu file .bat với tên profile
+                    string fileName = $"{profileName}.bat";
+                    string filePath = Path.Combine(batFilesDir, fileName);
+                    File.WriteAllText(filePath, batContent);
+
+                    AppendOutput($"✅ Đã tạo file: {fileName}", false);
+                    AppendOutput($"   Profile: {profileName} → {foundProfileDir}", false);
+
+                    // Reload danh sách files
+                    LoadSavedFiles();
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendOutput($"❌ Lỗi khi tìm profile: {ex.Message}", true);
+            }
+        }
+
+        private string FindChromePath()
+        {
+            string[] possiblePaths = {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Google", "Chrome", "Application", "chrome.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Google", "Chrome", "Application", "chrome.exe")
+            };
+
+            foreach (string path in possiblePaths)
+            {
+                if (File.Exists(path))
+                {
+                    return path;
+                }
+            }
+
+            return null;
         }
     }
 }
